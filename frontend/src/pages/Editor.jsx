@@ -292,7 +292,7 @@ const Editor = () => {
                                inputs: def.visual_editor.inputs,
                                outputs: def.visual_editor.outputs
                            };
-                           importModuleData(importedModule);
+                           importModule(importedModule);
                       }
                   });
               }
