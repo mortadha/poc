@@ -110,7 +110,12 @@ const Editor = () => {
       <ReactFlowProvider>
         <Sidebar />
         
-        <div className="flex-1 h-full relative" ref={reactFlowWrapper}>
+        <div 
+          className="flex-1 h-full relative" 
+          ref={reactFlowWrapper}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -119,8 +124,6 @@ const Editor = () => {
             onConnect={onConnect}
             nodeTypes={nodeTypes}
             onInit={(instance) => instance.fitView()}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             snapToGrid={true}
