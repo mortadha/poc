@@ -1,6 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Plus, Minus, ArrowRightFromLine, ArrowLeftFromLine, Component, Calculator } from 'lucide-react';
 import useModuleStore from '../../store/useModuleStore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 const ModuleItem = ({ type, label, icon: Icon, moduleData }) => {
   const onDragStart = (event) => {
@@ -35,8 +45,20 @@ const Sidebar = () => {
   const createModule = useModuleStore((state) => state.createModule);
   const setActiveModule = useModuleStore((state) => state.setActiveModule);
 
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newModuleName, setNewModuleName] = useState("");
+
   // Filter out primitives (we hardcode them) and the current module (recursion check)
   const userModules = Object.values(modules).filter(m => m.id !== 'root' && m.id !== activeModuleId);
+
+  const handleCreate = () => {
+    if (newModuleName.trim()) {
+      const id = createModule(newModuleName);
+      setActiveModule(id);
+      setNewModuleName("");
+      setIsCreateOpen(false);
+    }
+  };
 
   return (
     <div className="w-64 h-full bg-background border-r border-border flex flex-col">
@@ -76,14 +98,8 @@ const Sidebar = () => {
           <div className="flex items-center justify-between">
              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">My Modules</h3>
              <button 
-                onClick={() => {
-                    const name = prompt("Module Name:");
-                    if(name) {
-                        const id = createModule(name);
-                        setActiveModule(id);
-                    }
-                }}
-                className="p-1 hover:bg-primary/20 rounded text-primary"
+                onClick={() => setIsCreateOpen(true)}
+                className="p-1 hover:bg-primary/20 rounded text-primary transition-colors"
              >
                 <Plus size={14} />
              </button>
@@ -111,7 +127,7 @@ const Sidebar = () => {
       <div className="p-4 border-t border-border bg-muted/10">
          <label className="text-xs text-muted-foreground block mb-2">Active Workspace:</label>
          <select 
-            className="w-full bg-card border border-border text-sm rounded p-2 text-foreground"
+            className="w-full bg-card border border-border text-sm rounded p-2 text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
             value={activeModuleId}
             onChange={(e) => setActiveModule(e.target.value)}
          >
@@ -120,6 +136,37 @@ const Sidebar = () => {
             ))}
          </select>
       </div>
+
+      {/* Create Module Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Create New Module</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={newModuleName}
+                onChange={(e) => setNewModuleName(e.target.value)}
+                className="col-span-3 bg-background border-border focus:ring-primary"
+                placeholder="e.g., Vector Processor"
+                autoFocus
+                onKeyDown={(e) => {
+                    if(e.key === 'Enter') handleCreate();
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate}>Create Module</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
