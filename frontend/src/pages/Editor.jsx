@@ -111,46 +111,65 @@ const Editor = () => {
       });
   };
 
+  // Recursive function to collect all dependent modules
+  const collectDependencies = (moduleId, allModules, collected = {}) => {
+      if (collected[moduleId]) return collected; // Already collected
+      
+      const module = allModules[moduleId];
+      if (!module) return collected;
+      
+      // Add current module
+      collected[moduleId] = {
+          id: module.id,
+          name: module.name,
+          inputs: module.inputs,
+          outputs: module.outputs,
+          nodes: module.nodes,
+          edges: module.edges
+      };
+      
+      // Scan nodes for dependencies (sub-modules)
+      module.nodes.forEach(node => {
+          if (node.type === 'userModule' && node.data.referenceId) {
+              collectDependencies(node.data.referenceId, allModules, collected);
+          }
+      });
+      
+      return collected;
+  };
+
   const handleExport = () => {
       if(!currentModule) return;
       
-      // Create a clean export object
+      // Collect the main module and all its sub-modules
+      const bundledModules = collectDependencies(currentModule.id, modules);
+
+      // Create a comprehensive export object
       const exportData = {
-          id: currentModule.id,
-          name: currentModule.name,
-          description: "Exported from Blueprint Editor",
-          version: "1.0",
-          configuration: {
-              inputs: currentModule.inputs,
-              outputs: currentModule.outputs,
-              nodes: currentModule.nodes.map(n => ({
-                  id: n.id,
-                  type: n.type,
-                  position: n.position,
-                  data: n.data
-              })),
-              edges: currentModule.edges.map(e => ({
-                  id: e.id,
-                  source: e.source,
-                  target: e.target,
-                  sourceHandle: e.sourceHandle,
-                  targetHandle: e.targetHandle
-              }))
-          }
+          meta: {
+              name: currentModule.name,
+              description: "Full Module Bundle Export",
+              version: "1.0",
+              rootModuleId: currentModule.id,
+              exportedAt: new Date().toISOString()
+          },
+          // This object contains the definitions of ALL modules involved (Root + Submodules)
+          modules: bundledModules
       };
 
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentModule.name.replace(/\s+/g, '_')}_config.json`;
+      a.download = `${currentModule.name.replace(/\s+/g, '_')}_bundle.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
+      const depCount = Object.keys(bundledModules).length - 1;
       toast.success("Export Complete", {
-          description: `Configuration saved to ${currentModule.name.replace(/\s+/g, '_')}_config.json`,
+          description: `Saved ${currentModule.name} + ${depCount} sub-modules.`,
       });
   };
 
@@ -191,7 +210,7 @@ const Editor = () => {
                     className="gap-2 h-8 text-xs font-medium"
                  >
                     <Download size={14} />
-                    Export JSON
+                    Export Bundle
                  </Button>
             </div>
         </header>
