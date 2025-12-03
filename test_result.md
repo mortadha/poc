@@ -232,18 +232,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Page loads with Module Lib sidebar"
-    - "Create new module with + button"
-    - "Active Workspace dropdown functionality"
     - "Drag Module Input to canvas"
     - "Drag Module Output to canvas"
-    - "Connect nodes with edges"
-    - "Properties Panel shows node details"
-    - "Change Data Type in Properties Panel"
-  stuck_tasks: []
+  stuck_tasks:
+    - "Drag Module Input to canvas"
+    - "Drag Module Output to canvas"
   test_all: true
-  test_priority: "sequential"
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "testing"
     message: "Starting comprehensive functional test of Calculation Module Configuration App based on review request"
+  - agent: "testing"
+    message: "TESTING COMPLETED - Fixed compilation error (@dnd-kit/core import issue). UI loads correctly with all expected components. CRITICAL ISSUE: Drag and drop functionality not working - nodes do not appear on canvas after drag operations. This blocks testing of node connection and properties editing features."
