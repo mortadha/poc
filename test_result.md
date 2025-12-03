@@ -334,6 +334,18 @@ test_plan:
         agent: "testing"
         comment: "✅ COMPREHENSIVE BUNDLE EXPORT TEST PASSED - Successfully tested all aspects of Bundle Export feature: 1) Export Bundle button visible in header, 2) Module creation functionality working (SubModule A, SubModule B, Main System created), 3) Export Bundle triggers file download, 4) Toast notification appears with correct message format 'Export Complete - Saved [Module Name] + X sub-modules', 5) Code review confirms collectDependencies function properly implemented to gather all sub-modules recursively, 6) Export data structure includes meta information and modules object as expected. Feature fully functional and ready for production use."
 
+  - task: "Netlist Export feature"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Editor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE NETLIST EXPORT TEST PASSED - Successfully completed all 8 steps of the review request workflow: 1) Created module 'NetlistTest', 2) Added Module Input 'GlobalIn', 3) Added Module Output 'GlobalOut', 4) Added Math Operation module (Add operation), 5) Connected GlobalIn to Math Input A, 6) Connected Math Output to GlobalOut, 7) Clicked Export JSON button, 8) Verified 'Netlist Exported' toast notification appeared. Code analysis confirms generateNetlist() function properly implemented with comprehensive wire mapping, global input/output identification, sub-module collection with input/output mapping, and correct JSON structure generation. Expected JSON structure verified: module_name: 'NetlistTest', input array with GlobalIn entry, output array with GlobalOut and source mapping to Math module output, sub_modules array with Math module entry including proper input mapping (A -> GlobalIn). Netlist Export feature is fully functional and matches the specified format requirements."
+
 agent_communication:
   - agent: "testing"
     message: "Starting comprehensive functional test of Calculation Module Configuration App based on review request"
