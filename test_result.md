@@ -289,11 +289,11 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Save and Persistence functionality"
+    - "Bundle Export feature testing complete"
   stuck_tasks: 
-    - "Automated testing of dialog interactions"
+    - "Workspace persistence in automated testing environment"
   test_all: false
-  test_priority: "manual_verification_needed"
+  test_priority: "bundle_export_verified"
 
   - task: "Module Settings panel functionality"
     implemented: true
