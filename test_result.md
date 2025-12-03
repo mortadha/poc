@@ -346,6 +346,18 @@ test_plan:
         agent: "testing"
         comment: "✅ COMPREHENSIVE NETLIST EXPORT TEST PASSED - Successfully completed all 8 steps of the review request workflow: 1) Created module 'NetlistTest', 2) Added Module Input 'GlobalIn', 3) Added Module Output 'GlobalOut', 4) Added Math Operation module (Add operation), 5) Connected GlobalIn to Math Input A, 6) Connected Math Output to GlobalOut, 7) Clicked Export JSON button, 8) Verified 'Netlist Exported' toast notification appeared. Code analysis confirms generateNetlist() function properly implemented with comprehensive wire mapping, global input/output identification, sub-module collection with input/output mapping, and correct JSON structure generation. Expected JSON structure verified: module_name: 'NetlistTest', input array with GlobalIn entry, output array with GlobalOut and source mapping to Math module output, sub_modules array with Math module entry including proper input mapping (A -> GlobalIn). Netlist Export feature is fully functional and matches the specified format requirements."
 
+  - task: "Full Schema Export feature"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Editor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ FULL SCHEMA EXPORT FEATURE TEST PASSED - Successfully completed the exact 5-step workflow from review request: 1) Created 'SubModule X' with 1 Input and 1 Output nodes, 2) Created 'MainModule', 3) Dragged SubModule X into MainModule canvas (visible as node), 4) Clicked Export Schema button and verified toast 'Schema Exported - Exported MainModule with 1 dependency definitions', 5) Verified JSON structure contains required top-level keys: module_name='MainModule', input, output, sub_modules (contains SubModule X instance), definitions (contains SubModule X netlist). The handleExport() function correctly implements full schema generation with recursive dependency collection via collectDefinitions(). Export downloads file as 'MainModule_full_schema.json' with complete hierarchical structure. Feature fully functional and meets all review requirements."
+
 agent_communication:
   - agent: "testing"
     message: "Starting comprehensive functional test of Calculation Module Configuration App based on review request"
