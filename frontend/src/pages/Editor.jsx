@@ -33,15 +33,9 @@ const Editor = () => {
   const addNode = useModuleStore((state) => state.addNode);
   const modules = useModuleStore((state) => state.modules);
   const activeModuleId = useModuleStore((state) => state.activeModuleId);
-  const createModule = useModuleStore((state) => state.createModule); // We will reuse this or similar logic
+  const createModule = useModuleStore((state) => state.createModule);
   const setActiveModule = useModuleStore((state) => state.setActiveModule);
-  
-  // Access store directly to inject imported data
-  const importModuleData = useCallback((newModule) => {
-      useModuleStore.setState((prev) => ({
-          modules: { ...prev.modules, [newModule.id]: newModule }
-      }));
-  }, []);
+  const importModule = useModuleStore((state) => state.importModule);
 
   const currentModule = modules[activeModuleId];
 
