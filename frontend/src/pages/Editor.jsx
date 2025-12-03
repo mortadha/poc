@@ -141,7 +141,7 @@ const Editor = () => {
           </ReactFlow>
         </div>
 
-        <PropertiesPanel selectedNode={selectedNode} />
+        <PropertiesPanel key={selectedNode?.id} selectedNode={selectedNode} />
       </ReactFlowProvider>
     </div>
   );

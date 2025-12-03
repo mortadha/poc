@@ -1,22 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import useModuleStore from '../../store/useModuleStore';
-import { Settings, Trash2 } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
 const PropertiesPanel = ({ selectedNode }) => {
   const updateNodeData = useModuleStore((state) => state.updateNodeData);
-  const [label, setLabel] = useState('');
-  const [valueType, setValueType] = useState('');
+  
+  // Initialize state from props (safe because we force re-mount on ID change via key in parent)
+  const [label, setLabel] = useState(selectedNode?.data?.label || '');
+  const [valueType, setValueType] = useState(selectedNode?.data?.valueType || 'Integer');
 
-  useEffect(() => {
+  const handleSave = (newLabel, newValueType) => {
     if (selectedNode) {
-      setLabel(selectedNode.data.label || '');
-      setValueType(selectedNode.data.valueType || 'Integer');
-    }
-  }, [selectedNode]);
-
-  const handleSave = () => {
-    if (selectedNode) {
-      updateNodeData(selectedNode.id, { label, valueType });
+      updateNodeData(selectedNode.id, { label: newLabel, valueType: newValueType });
     }
   };
 
@@ -45,8 +40,9 @@ const PropertiesPanel = ({ selectedNode }) => {
             type="text"
             value={label}
             onChange={(e) => {
-                setLabel(e.target.value);
-                updateNodeData(selectedNode.id, { label: e.target.value });
+                const val = e.target.value;
+                setLabel(val);
+                handleSave(val, valueType);
             }}
             className="w-full bg-card border border-border rounded p-2 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
           />
@@ -58,8 +54,9 @@ const PropertiesPanel = ({ selectedNode }) => {
             <select
               value={valueType}
               onChange={(e) => {
-                setValueType(e.target.value);
-                updateNodeData(selectedNode.id, { valueType: e.target.value });
+                const val = e.target.value;
+                setValueType(val);
+                handleSave(label, val);
               }}
               className="w-full bg-card border border-border rounded p-2 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
             >
