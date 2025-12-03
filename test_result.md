@@ -245,15 +245,42 @@ frontend:
 
   - task: "Module creation via plus button"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/flow/Sidebar.jsx"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL ISSUE - Module creation not working. Plus button uses native prompt() function which doesn't trigger in automated testing environment. This prevents creation of SubModule and testing of advanced features like workspace switching and live module updates."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIXED - Module creation now working perfectly with Dialog component. No more prompt() function. Successfully created SubModule and TestModule using proper Dialog interface with input field and Create/Cancel buttons."
+
+  - task: "SubModule regression test - complete workflow"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Editor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE REGRESSION TEST PASSED - All 11 test requirements completed successfully: 1) SubModule creation with Dialog (no prompt), 2) Added 2 Module Input + 1 Module Output nodes, 3) Renamed inputs to Vector A and Vector B, 4) Switched to Main Module, 5) Dragged SubModule to canvas, 6) Verified 2 input handles + 1 output handle, 7) Verified Vector A and Vector B labels visible on node, 8) Switched back to SubModule and removed input node, 9) Switched back to Main Module, 10) Verified handle count updated to 1 input handle, 11) Successfully exported JSON. Live module updates working perfectly between workspaces."
+
+  - task: "Node deletion functionality"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Editor.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ WORKING - Node deletion works with Backspace key. Delete key doesn't work but Backspace successfully removes nodes from canvas. Live updates work correctly - when node removed from SubModule, handle count updates immediately on Main Module instance."
 
 metadata:
   created_by: "testing_agent"
