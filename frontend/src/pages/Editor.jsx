@@ -238,34 +238,67 @@ const Editor = () => {
           };
       });
 
-      // 5. Construct Final JSON
+      // 5. Construct Netlist Object
       return {
           module_name: targetModule.name,
           input: globalInputs.map(i => ({ name: i.name, type: i.type })),
           output: resolvedGlobalOutputs,
-          parameters: [], // Placeholder for future
+          parameters: [],
           sub_modules: subModulesList,
-          connections: [] // Optional: could list wires explicitly if needed, but mapping covers it
       };
   };
 
   const handleExport = () => {
       if(!currentModule) return;
       
-      const netlist = generateNetlist(currentModule.id);
+      // Generate the Root Netlist
+      const rootNetlist = generateNetlist(currentModule.id);
+      
+      // Recursively collect definitions for all used User Modules
+      const definitions = {};
+      
+      const collectDefinitions = (moduleId) => {
+          const module = modules[moduleId];
+          if (!module) return;
 
-      const blob = new Blob([JSON.stringify(netlist, null, 2)], { type: 'application/json' });
+          module.nodes.forEach(node => {
+              if (node.type === 'userModule' && node.data.referenceId) {
+                  const refId = node.data.referenceId;
+                  
+                  // Only process if not already collected
+                  if (!definitions[refId]) {
+                      const netlist = generateNetlist(refId);
+                      if (netlist) {
+                          definitions[refId] = netlist;
+                          // Recurse
+                          collectDefinitions(refId);
+                      }
+                  }
+              }
+          });
+      };
+
+      collectDefinitions(currentModule.id);
+
+      // Assemble Final Schema
+      const fullSchema = {
+          ...rootNetlist,
+          definitions: Object.values(definitions)
+      };
+
+      const blob = new Blob([JSON.stringify(fullSchema, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentModule.name.replace(/\s+/g, '_')}_netlist.json`;
+      a.download = `${currentModule.name.replace(/\s+/g, '_')}_full_schema.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast.success("Netlist Exported", {
-          description: `Saved structural JSON for ${currentModule.name}`,
+      const defCount = Object.keys(definitions).length;
+      toast.success("Schema Exported", {
+          description: `Exported ${currentModule.name} with ${defCount} dependency definitions.`,
       });
   };
 
@@ -306,7 +339,7 @@ const Editor = () => {
                     className="gap-2 h-8 text-xs font-medium"
                  >
                     <Download size={14} />
-                    Export JSON
+                    Export Schema
                  </Button>
             </div>
         </header>
