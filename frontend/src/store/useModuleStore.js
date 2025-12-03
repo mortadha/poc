@@ -155,7 +155,9 @@ const useModuleStore = create(
          if(state && state.modules && state.activeModuleId) {
              const active = state.modules[state.activeModuleId] || state.modules['root'];
              if(active) {
-                 state.setActiveModule(active.id);
+                 // Set nodes and edges directly to avoid infinite loop
+                 state.nodes = active.nodes || [];
+                 state.edges = active.edges || [];
              }
          }
       }
