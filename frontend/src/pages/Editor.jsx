@@ -6,7 +6,9 @@ import ReactFlow, {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
-  addEdge
+  addEdge,
+  getIncomers,
+  getOutgoers
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Download, Save, Box } from 'lucide-react';
@@ -103,73 +105,167 @@ const Editor = () => {
   };
 
   const handleSave = () => {
-      // Explicit save action (visual feedback)
-      // State is already persisted via zustand persist middleware
       toast.success("Module Saved", {
           description: `${currentModule?.name} has been saved to local storage.`,
           duration: 3000,
       });
   };
 
-  // Recursive function to collect all dependent modules
-  const collectDependencies = (moduleId, allModules, collected = {}) => {
-      if (collected[moduleId]) return collected; // Already collected
+  // --- NETLIST GENERATION LOGIC ---
+  const generateNetlist = (targetModuleId) => {
+      const targetModule = modules[targetModuleId];
+      if (!targetModule) return null;
+
+      const cleanName = (str) => str.replace(/\s+/g, '_');
       
-      const module = allModules[moduleId];
-      if (!module) return collected;
-      
-      // Add current module
-      collected[moduleId] = {
-          id: module.id,
-          name: module.name,
-          inputs: module.inputs,
-          outputs: module.outputs,
-          nodes: module.nodes,
-          edges: module.edges
-      };
-      
-      // Scan nodes for dependencies (sub-modules)
-      module.nodes.forEach(node => {
-          if (node.type === 'userModule' && node.data.referenceId) {
-              collectDependencies(node.data.referenceId, allModules, collected);
-          }
+      // 1. Identify Global Inputs & Outputs
+      const globalInputs = targetModule.nodes
+          .filter(n => n.type === 'inputNode')
+          .map(n => ({
+              name: cleanName(n.data.label),
+              type: n.data.valueType,
+              nodeId: n.id
+          }));
+
+      const globalOutputs = targetModule.nodes
+          .filter(n => n.type === 'outputNode')
+          .map(n => ({
+              name: cleanName(n.data.label),
+              type: n.data.valueType,
+              nodeId: n.id,
+              inputId: n.data.inputs[0].id // The handle ID on this node that receives data
+          }));
+
+      // 2. Generate "Wire" names for every data source
+      // Sources are: Global Inputs AND Outputs of Internal Nodes
+      const wireMap = {}; // Key: `${NodeID}_${HandleID}` -> Value: WireName
+
+      // A. Wires from Global Inputs
+      globalInputs.forEach(input => {
+          // For Input Nodes, the source handle is usually 'out-1' defined in CustomNode or handleAddInput
+          // We need to match the handle ID from the node definition
+          const sourceHandleId = 'out-1'; // Hardcoded standard for inputNode
+          wireMap[`${input.nodeId}_${sourceHandleId}`] = input.name;
       });
+
+      // B. Wires from Internal Nodes (SubModules/Math)
+      const internalNodes = targetModule.nodes.filter(n => n.type === 'userModule' || n.type === 'mathNode');
       
-      return collected;
+      internalNodes.forEach(node => {
+          const nodeName = cleanName(node.data.label);
+          const nodeIdSuffix = node.id.split('-')[1] || '0';
+          
+          // Get outputs definition
+          let outputs = [];
+          if (node.type === 'userModule' && node.data.referenceId) {
+              outputs = modules[node.data.referenceId]?.outputs || [];
+          } else {
+              outputs = node.data.outputs || [];
+          }
+
+          outputs.forEach(out => {
+              // Wire Name = NodeName_NodeID_PortLabel
+              const wireName = `${nodeName}_${nodeIdSuffix}_${cleanName(out.label)}`;
+              wireMap[`${node.id}_${out.id}`] = wireName;
+          });
+      });
+
+      // 3. Build SubModule Instances with Connections
+      const subModulesList = internalNodes.map(node => {
+          const nodeName = cleanName(node.data.label);
+          const nodeIdSuffix = node.id.split('-')[1] || '0';
+          
+          // Determine Template Name
+          let templateName = "Unknown";
+          let inputsDef = [];
+          let outputsDef = [];
+
+          if (node.type === 'userModule' && node.data.referenceId) {
+              const ref = modules[node.data.referenceId];
+              templateName = ref ? ref.name : "MissingModule";
+              inputsDef = ref ? ref.inputs : [];
+              outputsDef = ref ? ref.outputs : [];
+          } else if (node.type === 'mathNode') {
+              templateName = "Math_" + (node.data.operation || 'Add');
+              inputsDef = node.data.inputs || [];
+              outputsDef = node.data.outputs || [];
+          }
+
+          // Map Inputs: Find edges connected TO this node's input handles
+          const inputMapping = {};
+          inputsDef.forEach(inDef => {
+              // Find edge: target = node.id, targetHandle = inDef.id
+              const incomingEdge = targetModule.edges.find(e => e.target === node.id && e.targetHandle === inDef.id);
+              if (incomingEdge) {
+                  // Find the wire name for the source of this edge
+                  const sourceKey = `${incomingEdge.source}_${incomingEdge.sourceHandle}`;
+                  inputMapping[cleanName(inDef.label)] = wireMap[sourceKey] || "UNCONNECTED";
+              } else {
+                  inputMapping[cleanName(inDef.label)] = null; // Unconnected
+              }
+          });
+
+          // Map Outputs: Declare the wires this node drives
+          const outputMapping = {};
+          outputsDef.forEach(outDef => {
+               const wireKey = `${node.id}_${outDef.id}`;
+               outputMapping[cleanName(outDef.label)] = wireMap[wireKey];
+          });
+
+          return {
+              id: `${nodeName}_${nodeIdSuffix}`,
+              module_name: templateName,
+              input: inputMapping,
+              output: outputMapping
+          };
+      });
+
+      // 4. Resolve Global Outputs Source
+      const resolvedGlobalOutputs = globalOutputs.map(gOut => {
+          // Find edge connecting TO the Output Node
+          const incomingEdge = targetModule.edges.find(e => e.target === gOut.nodeId); // Output nodes usually have 1 input handle
+          let sourceSignal = null;
+          
+          if (incomingEdge) {
+              const sourceKey = `${incomingEdge.source}_${incomingEdge.sourceHandle}`;
+              sourceSignal = wireMap[sourceKey] || "UNCONNECTED";
+          }
+
+          return {
+              name: gOut.name,
+              type: gOut.type,
+              source: sourceSignal
+          };
+      });
+
+      // 5. Construct Final JSON
+      return {
+          module_name: targetModule.name,
+          input: globalInputs.map(i => ({ name: i.name, type: i.type })),
+          output: resolvedGlobalOutputs,
+          parameters: [], // Placeholder for future
+          sub_modules: subModulesList,
+          connections: [] // Optional: could list wires explicitly if needed, but mapping covers it
+      };
   };
 
   const handleExport = () => {
       if(!currentModule) return;
       
-      // Collect the main module and all its sub-modules
-      const bundledModules = collectDependencies(currentModule.id, modules);
+      const netlist = generateNetlist(currentModule.id);
 
-      // Create a comprehensive export object
-      const exportData = {
-          meta: {
-              name: currentModule.name,
-              description: "Full Module Bundle Export",
-              version: "1.0",
-              rootModuleId: currentModule.id,
-              exportedAt: new Date().toISOString()
-          },
-          // This object contains the definitions of ALL modules involved (Root + Submodules)
-          modules: bundledModules
-      };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(netlist, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${currentModule.name.replace(/\s+/g, '_')}_bundle.json`;
+      a.download = `${currentModule.name.replace(/\s+/g, '_')}_netlist.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      const depCount = Object.keys(bundledModules).length - 1;
-      toast.success("Export Complete", {
-          description: `Saved ${currentModule.name} + ${depCount} sub-modules.`,
+      toast.success("Netlist Exported", {
+          description: `Saved structural JSON for ${currentModule.name}`,
       });
   };
 
@@ -210,7 +306,7 @@ const Editor = () => {
                     className="gap-2 h-8 text-xs font-medium"
                  >
                     <Download size={14} />
-                    Export Bundle
+                    Export JSON
                  </Button>
             </div>
         </header>
