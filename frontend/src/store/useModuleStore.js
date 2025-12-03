@@ -87,6 +87,14 @@ const useModuleStore = create((set, get) => ({
     get().syncModuleData();
   },
 
+  deleteNode: (nodeId) => {
+    set({ 
+      nodes: get().nodes.filter(n => n.id !== nodeId),
+      edges: get().edges.filter(e => e.source !== nodeId && e.target !== nodeId)
+    });
+    get().syncModuleData();
+  },
+
   updateNodeData: (nodeId, newData) => {
     set({
       nodes: get().nodes.map((node) => {
