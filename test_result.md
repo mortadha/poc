@@ -358,6 +358,18 @@ test_plan:
         agent: "testing"
         comment: "✅ FULL SCHEMA EXPORT FEATURE TEST PASSED - Successfully completed the exact 5-step workflow from review request: 1) Created 'SubModule X' with 1 Input and 1 Output nodes, 2) Created 'MainModule', 3) Dragged SubModule X into MainModule canvas (visible as node), 4) Clicked Export Schema button and verified toast 'Schema Exported - Exported MainModule with 1 dependency definitions', 5) Verified JSON structure contains required top-level keys: module_name='MainModule', input, output, sub_modules (contains SubModule X instance), definitions (contains SubModule X netlist). The handleExport() function correctly implements full schema generation with recursive dependency collection via collectDefinitions(). Export downloads file as 'MainModule_full_schema.json' with complete hierarchical structure. Feature fully functional and meets all review requirements."
 
+  - task: "Export Blueprint and Import Blueprint features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Editor.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ EXPORT BLUEPRINT AND IMPORT BLUEPRINT FEATURE TEST PASSED - Successfully completed comprehensive testing of both Export Blueprint and Import Blueprint functionality per review request: 1) Export Blueprint button visible and functional in header, triggers file download with proper toast notification 'Blueprint Exported - Saved schema + visual data for Main Module', 2) Import Blueprint button visible and functional, successfully imports JSON files with toast notification 'Blueprint Imported - Loaded ImportTest_Main (Imported) successfully', 3) New imported module 'ImportTest_Main (Imported)' created and automatically set as active workspace, 4) Canvas content restoration working perfectly - imported nodes (TEST INPUT and TEST OUTPUT) correctly displayed on canvas with proper positioning, 5) Module Settings panel correctly shows imported inputs and outputs with proper data types, 6) Workspace management functional - dropdown shows both original and imported modules, 7) Visual data preservation confirmed - nodes, edges, inputs, outputs all restored correctly, 8) Dependency handling implemented - definitions array properly processes sub-module dependencies. The Export Blueprint and Import Blueprint features are fully functional with complete visual data preservation, proper dependency restoration, and excellent user feedback through toast notifications. Ready for production use."
+
 agent_communication:
   - agent: "testing"
     message: "Starting comprehensive functional test of Calculation Module Configuration App based on review request"
