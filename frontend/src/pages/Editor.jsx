@@ -309,7 +309,7 @@ const Editor = () => {
                   outputs: data.visual_editor?.outputs || []
               };
 
-              importModuleData(newRootModule);
+              importModule(newRootModule);
               setActiveModule(newRootId);
               
               toast.success("Blueprint Imported", {
