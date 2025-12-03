@@ -289,11 +289,11 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Full Schema Export feature testing complete"
+    - "Export Blueprint and Import Blueprint features testing complete"
   stuck_tasks: 
     - "Workspace persistence in automated testing environment"
   test_all: false
-  test_priority: "full_schema_export_verified"
+  test_priority: "export_import_blueprint_verified"
 
   - task: "Module Settings panel functionality"
     implemented: true
