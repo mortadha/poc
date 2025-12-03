@@ -1,21 +1,35 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { Box } from 'lucide-react';
+import { Box, ArrowRightFromLine, ArrowLeftFromLine, Calculator, Component } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import useModuleStore from '../../store/useModuleStore';
 
-const CustomNode = ({ data, selected }) => {
+const CustomNode = ({ data, selected, type }) => {
   // Subscribe to modules to get real-time updates for User Modules
   const modules = useModuleStore((state) => state.modules);
   
-  // Determine source of inputs/outputs
-  // If referenceId exists, this is an instance of another module -> get live inputs/outputs
-  // Otherwise, use static data (for Primitives like Math, or the Input/Output definition nodes)
   const refModule = data.referenceId ? modules[data.referenceId] : null;
   
   const inputs = refModule ? refModule.inputs : data.inputs;
   const outputs = refModule ? refModule.outputs : data.outputs;
   const label = refModule ? refModule.name : data.label;
+
+  // Determine Icon based on role or type (derived from plain data, no JSX in state)
+  const renderIcon = () => {
+      if (data.role === 'input' || type === 'inputNode') {
+          return <ArrowRightFromLine size={14} />;
+      }
+      if (data.role === 'output' || type === 'outputNode') {
+          return <ArrowLeftFromLine size={14} />;
+      }
+      if (type === 'mathNode') {
+          return <Calculator size={14} />;
+      }
+      if (type === 'userModule' || data.referenceId) {
+          return <Component size={14} />;
+      }
+      return <Box size={14} />;
+  };
 
   return (
     <div 
@@ -27,7 +41,7 @@ const CustomNode = ({ data, selected }) => {
       {/* Header */}
       <div className="px-3 py-2 bg-muted/50 border-b border-border rounded-t-lg flex items-center gap-2">
         <div className="p-1 rounded bg-primary/10 text-primary">
-          {data.icon || <Box size={14} />}
+          {renderIcon()}
         </div>
         <span className="text-xs font-semibold uppercase tracking-wider text-foreground/90 truncate max-w-[140px]">
           {label}

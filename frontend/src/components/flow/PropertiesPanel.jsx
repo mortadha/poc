@@ -42,7 +42,7 @@ const PropertiesPanel = ({ selectedNode }) => {
           data: { 
               label: `Input ${inputsCount + 1}`, 
               valueType: 'Integer',
-              icon: <span className="text-xs font-bold">IN</span>,
+              role: 'input', // No JSX
               outputs: [{ id: 'out-1', label: 'Val', type: 'Integer' }],
               inputs: []
           }
@@ -58,7 +58,7 @@ const PropertiesPanel = ({ selectedNode }) => {
           data: { 
               label: `Output ${outputsCount + 1}`, 
               valueType: 'Integer',
-              icon: <span className="text-xs font-bold">OUT</span>,
+              role: 'output', // No JSX
               inputs: [{ id: 'in-1', label: 'Val', type: 'Integer' }],
               outputs: []
           }

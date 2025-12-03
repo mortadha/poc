@@ -80,12 +80,12 @@ const Editor = () => {
       if (type === 'inputNode') {
          newNode.data.outputs = [{ id: 'out-1', label: 'Val', type: moduleData.valueType }];
          newNode.data.inputs = [];
-         newNode.data.icon = <span className="text-xs font-bold">IN</span>;
+         newNode.data.role = 'input'; // Use role string instead of JSX icon
       } 
       else if (type === 'outputNode') {
          newNode.data.inputs = [{ id: 'in-1', label: 'Val', type: moduleData.valueType }];
          newNode.data.outputs = [];
-         newNode.data.icon = <span className="text-xs font-bold">OUT</span>;
+         newNode.data.role = 'output'; // Use role string instead of JSX icon
       }
       else if (type === 'mathNode') {
          newNode.data.inputs = [
@@ -93,9 +93,9 @@ const Editor = () => {
             { id: 'b', label: 'B', type: 'Any' }
          ];
          newNode.data.outputs = [{ id: 'result', label: 'Res', type: 'Any' }];
+         newNode.data.role = 'math';
       }
-      // User Module data handling is now done in CustomNode via store subscription
-
+      
       addNode(newNode);
     },
     [addNode, modules]
@@ -116,7 +116,7 @@ const Editor = () => {
       });
   };
 
-  // --- NETLIST GENERATION LOGIC (Reused) ---
+  // --- NETLIST GENERATION LOGIC ---
   const generateNetlist = (targetModuleId) => {
       const targetModule = modules[targetModuleId];
       if (!targetModule) return null;
@@ -209,7 +209,6 @@ const Editor = () => {
                   const refId = node.data.referenceId;
                   if (!definitions[refId]) {
                       const netlist = generateNetlist(refId);
-                      // Also store visual data for dependencies to allow full restoration
                       const refModule = modules[refId];
                       if (netlist && refModule) {
                           definitions[refId] = {
@@ -230,7 +229,6 @@ const Editor = () => {
 
       collectDefinitions(currentModule.id);
 
-      // Final Schema with Visual Data for Root
       const fullSchema = {
           ...rootNetlist,
           visual_editor: {
@@ -270,23 +268,13 @@ const Editor = () => {
           try {
               const data = JSON.parse(e.target.result);
               
-              // 1. Restore Dependencies First
               if (data.definitions) {
                   data.definitions.forEach(def => {
-                      // Reconstruct module object
                       if(def.visual_editor) {
-                          // If we have visuals, perfect restoration
                            const newId = `module-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                           // NOTE: In a real app we might want to check name collisions or reuse IDs
-                           // For duplicate, we generate NEW ID but keep content
-                           // BUT to maintain links, we might need to map old IDs to new IDs.
-                           // For simplicity in this prototype, we'll trust the dependency structure implies simple hierarchy
-                           // Actually, to support "duplicate", we should just import it as a NEW module.
-                           
-                           // Quick Hack: Just import them as new modules in store
                            const importedModule = {
-                               id: newId, // Unique ID
-                               name: def.module_name, // Original Name
+                               id: newId,
+                               name: def.module_name,
                                nodes: def.visual_editor.nodes,
                                edges: def.visual_editor.edges,
                                inputs: def.visual_editor.inputs,
@@ -297,8 +285,6 @@ const Editor = () => {
                   });
               }
 
-              // 2. Restore Root Module (As a new duplicate or overwrite?)
-              // We will Import as a NEW module (Duplicate behavior)
               const newRootId = `module-${Date.now()}`;
               const newRootModule = {
                   id: newRootId,
@@ -322,7 +308,7 @@ const Editor = () => {
           }
       };
       reader.readAsText(file);
-      event.target.value = ''; // Reset
+      event.target.value = ''; 
   };
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
