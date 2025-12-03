@@ -239,6 +239,21 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ PASSED - Data type change functionality working perfectly. Can successfully change from 'Integer' to 'List<Int>' and other data types. Changes are reflected immediately in both the Properties Panel and the node display on canvas."
+      - working: true
+        agent: "testing"
+        comment: "✅ CONFIRMED WORKING - Successfully tested data type change from default to 'String' in Properties Panel. Label editing also working correctly. Properties Panel fully functional."
+
+  - task: "Module creation via plus button"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/flow/Sidebar.jsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE - Module creation not working. Plus button uses native prompt() function which doesn't trigger in automated testing environment. This prevents creation of SubModule and testing of advanced features like workspace switching and live module updates."
 
 metadata:
   created_by: "testing_agent"
