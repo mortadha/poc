@@ -289,11 +289,11 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Netlist Export feature testing complete"
+    - "Full Schema Export feature testing complete"
   stuck_tasks: 
     - "Workspace persistence in automated testing environment"
   test_all: false
-  test_priority: "netlist_export_verified"
+  test_priority: "full_schema_export_verified"
 
   - task: "Module Settings panel functionality"
     implemented: true
