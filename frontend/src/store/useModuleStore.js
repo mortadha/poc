@@ -136,6 +136,13 @@ const useModuleStore = create(
         });
       },
 
+      // Import module data
+      importModule: (newModule) => {
+          set((state) => ({
+              modules: { ...state.modules, [newModule.id]: newModule }
+          }));
+      },
+
       // Reset/Clear all data (useful for testing or reset)
       resetStore: () => {
           set({
