@@ -288,10 +288,12 @@ metadata:
   test_sequence: 2
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
-  test_all: true
-  test_priority: "complete"
+  current_focus: 
+    - "Save and Persistence functionality"
+  stuck_tasks: 
+    - "Automated testing of dialog interactions"
+  test_all: false
+  test_priority: "manual_verification_needed"
 
   - task: "Module Settings panel functionality"
     implemented: true
