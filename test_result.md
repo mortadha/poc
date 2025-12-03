@@ -261,10 +261,12 @@ metadata:
   test_sequence: 1
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
-  test_all: true
-  test_priority: "sequential"
+  current_focus: 
+    - "Module creation via plus button"
+  stuck_tasks: 
+    - "Module creation via plus button"
+  test_all: false
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "testing"
