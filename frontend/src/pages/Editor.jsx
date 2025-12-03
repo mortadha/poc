@@ -10,12 +10,14 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Download, Save, Box } from 'lucide-react';
+import { toast } from 'sonner';
 
 import Sidebar from '../components/flow/Sidebar';
 import PropertiesPanel from '../components/flow/PropertiesPanel';
 import CustomNode from '../components/flow/CustomNode';
 import useModuleStore from '../store/useModuleStore';
 import { cn } from '../lib/utils';
+import { Button } from '../components/ui/button';
 
 const Editor = () => {
   const reactFlowWrapper = useRef(null);
@@ -100,6 +102,15 @@ const Editor = () => {
     setSelectedNodeId(null);
   };
 
+  const handleSave = () => {
+      // Explicit save action (visual feedback)
+      // State is already persisted via zustand persist middleware
+      toast.success("Module Saved", {
+          description: `${currentModule?.name} has been saved to local storage.`,
+          duration: 3000,
+      });
+  };
+
   const handleExport = () => {
       if(!currentModule) return;
       
@@ -137,6 +148,10 @@ const Editor = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      toast.success("Export Complete", {
+          description: `Configuration saved to ${currentModule.name.replace(/\s+/g, '_')}_config.json`,
+      });
   };
 
   const selectedNode = nodes.find(n => n.id === selectedNodeId);
@@ -162,13 +177,22 @@ const Editor = () => {
             </div>
 
             <div className="flex items-center gap-2">
-                 <button 
+                 <Button
+                    variant="outline"
+                    onClick={handleSave}
+                    className="gap-2 h-8 text-xs font-medium"
+                 >
+                    <Save size={14} />
+                    Save
+                 </Button>
+                 
+                 <Button 
                     onClick={handleExport}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-xs font-medium transition-colors"
+                    className="gap-2 h-8 text-xs font-medium"
                  >
                     <Download size={14} />
-                    Save JSON
-                 </button>
+                    Export JSON
+                 </Button>
             </div>
         </header>
 
