@@ -1,0 +1,69 @@
+import {
+  Directive,
+  Input,
+  OnDestroy,
+  OnInit,
+  inject
+} from '@angular/core';
+import { FormGroupDirective } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+@Directive({
+  selector: 'form[appDraftForm]',
+  standalone: true
+})
+export class DraftFormDirective implements OnInit, OnDestroy {
+  @Input({ required: true }) draftFormName!: string;
+  @Input() draftContext?: string;
+  @Input() draftStorage: 'local' | 'session' = 'local';
+
+  private formGroupDirective = inject(FormGroupDirective);
+  private router = inject(Router);
+
+  private sub?: Subscription;
+  private storageKey = '';
+
+  ngOnInit(): void {
+    const form = this.formGroupDirective.control;
+    if (!form || !this.draftFormName) {
+      return;
+    }
+
+    this.storageKey = this.buildStorageKey();
+
+    const raw = this.getStorage().getItem(this.storageKey);
+
+    if (raw) {
+      try {
+        const savedValue = JSON.parse(raw);
+
+        queueMicrotask(() => {
+          form.patchValue(savedValue, { emitEvent: false });
+          console.log('draft restored =', form.getRawValue());
+        });
+      } catch (e) {
+        console.error('Erreur lecture draft', e);
+      }
+    }
+
+    this.sub = form.valueChanges.subscribe(value => {
+      this.getStorage().setItem(this.storageKey, JSON.stringify(value));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  private buildStorageKey(): string {
+    const url = this.router.url;
+    return this.draftContext
+      ? `draft:${this.draftFormName}:${url}:${this.draftContext}`
+      : `draft:${this.draftFormName}:${url}`;
+  }
+
+  private getStorage(): Storage {
+    return this.draftStorage === 'session' ? sessionStorage : localStorage;
+  }
+}
