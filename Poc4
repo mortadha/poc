@@ -1,0 +1,131 @@
+import {
+  AfterViewInit,
+  Directive,
+  Input,
+  OnDestroy,
+  inject
+} from '@angular/core';
+import { FormGroupDirective } from '@angular/forms';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
+
+@Directive({
+  selector: 'form[appDraftForm]',
+  standalone: true
+})
+export class DraftFormDirective implements AfterViewInit, OnDestroy {
+  @Input({ required: true }) draftFormName!: string;
+  @Input() draftContext?: string;
+  @Input() draftStorage: 'local' | 'session' = 'local';
+  @Input() draftExcludeFields: string[] = [];
+
+  private formGroupDirective = inject(FormGroupDirective);
+  private router = inject(Router);
+
+  private valueSub?: Subscription;
+  private navSub?: Subscription;
+  private storageKey = '';
+
+  ngAfterViewInit(): void {
+    const form = this.formGroupDirective.control;
+    if (!form || !this.draftFormName) {
+      return;
+    }
+
+    // 1) première restauration
+    this.restoreDraft();
+
+    // 2) sauvegarde automatique
+    this.valueSub = form.valueChanges.subscribe(value => {
+      const filteredValue = this.removeExcludedFields(value, this.draftExcludeFields);
+      this.getStorage().setItem(this.storageKey, JSON.stringify(filteredValue));
+    });
+
+    // 3) restauration quand on revient sur la route
+    this.navSub = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.restoreDraft();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.valueSub?.unsubscribe();
+    this.navSub?.unsubscribe();
+  }
+
+  clearDraft(): void {
+    if (this.storageKey) {
+      this.getStorage().removeItem(this.storageKey);
+    }
+  }
+
+  private restoreDraft(): void {
+    const form = this.formGroupDirective.control;
+    if (!form) {
+      return;
+    }
+
+    this.storageKey = this.buildStorageKey();
+
+    const raw = this.getStorage().getItem(this.storageKey);
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+
+      queueMicrotask(() => {
+        form.patchValue(parsed, { emitEvent: false });
+      });
+    } catch (error) {
+      console.error('Erreur restauration draft', error);
+    }
+  }
+
+  private buildStorageKey(): string {
+    const url = this.router.url;
+    return this.draftContext
+      ? `draft:${this.draftFormName}:${url}:${this.draftContext}`
+      : `draft:${this.draftFormName}:${url}`;
+  }
+
+  private getStorage(): Storage {
+    return this.draftStorage === 'session' ? sessionStorage : localStorage;
+  }
+
+  private removeExcludedFields(value: any, excludedFields: string[]): any {
+    const clone = structuredClone(value);
+
+    for (const path of excludedFields) {
+      this.deleteByPath(clone, path);
+    }
+
+    return clone;
+  }
+
+  private deleteByPath(obj: any, path: string): void {
+    if (!obj || !path) {
+      return;
+    }
+
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+
+    if (!lastKey) {
+      return;
+    }
+
+    let current = obj;
+
+    for (const key of keys) {
+      if (current[key] == null || typeof current[key] !== 'object') {
+        return;
+      }
+      current = current[key];
+    }
+
+    delete current[lastKey];
+  }
+}
