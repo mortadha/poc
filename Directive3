@@ -1,0 +1,71 @@
+import {
+  Directive,
+  Input,
+  OnDestroy,
+  AfterViewInit,
+  inject
+} from '@angular/core';
+import { FormGroupDirective } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+@Directive({
+  selector: 'form[appDraftForm]',
+  standalone: true
+})
+export class DraftFormDirective implements AfterViewInit, OnDestroy {
+  @Input({ required: true }) draftFormName!: string;
+  @Input() draftContext?: string;
+  @Input() draftStorage: 'local' | 'session' = 'local';
+
+  private formGroupDirective = inject(FormGroupDirective);
+  private router = inject(Router);
+  private sub?: Subscription;
+  private storageKey = '';
+
+  ngAfterViewInit(): void {
+    const form = this.formGroupDirective.control;
+    if (!form || !this.draftFormName) {
+      return;
+    }
+
+    this.storageKey = this.buildStorageKey();
+    const storage = this.getStorage();
+    const raw = storage.getItem(this.storageKey);
+
+    console.log('draft key =', this.storageKey);
+    console.log('draft raw =', raw);
+
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+
+        setTimeout(() => {
+          form.patchValue(parsed, { emitEvent: false });
+          console.log('restored form =', form.getRawValue());
+        });
+      } catch (e) {
+        console.error('draft parse error', e);
+      }
+    }
+
+    this.sub = form.valueChanges.subscribe(value => {
+      storage.setItem(this.storageKey, JSON.stringify(value));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  private buildStorageKey(): string {
+    const url = this.router.url;
+    return this.draftContext
+      ? `draft:${this.draftFormName}:${url}:${this.draftContext}`
+      : `draft:${this.draftFormName}:${url}`;
+  }
+
+  private getStorage(): Storage {
+    return this.draftStorage === 'session' ? sessionStorage : localStorage;
+  }
+}
