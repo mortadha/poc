@@ -1,0 +1,89 @@
+import {
+  Directive,
+  Input,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
+import { FormGroupDirective } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+type DraftSnapshot = {
+  value: Record<string, any>;
+  updatedAt: string;
+};
+
+@Directive({
+  selector: 'form[appDraftForm]',
+  standalone: true,
+})
+export class DraftFormDirective implements OnInit, OnDestroy {
+  @Input({ required: true }) draftFormName!: string;
+  @Input() draftStorage: 'local' | 'session' = 'local';
+  @Input() clearOnSubmit = true;
+
+  private formGroupDirective = inject(FormGroupDirective);
+  private router = inject(Router);
+
+  private sub?: Subscription;
+  private storageKey!: string;
+
+  ngOnInit(): void {
+    const form = this.formGroupDirective.control;
+    if (!form || !this.draftFormName) {
+      return;
+    }
+
+    this.storageKey = this.buildStorageKey();
+
+    // restauration
+    const raw = this.getStorage().getItem(this.storageKey);
+    if (raw) {
+      try {
+        const draft: DraftSnapshot = JSON.parse(raw);
+        form.patchValue(draft.value ?? {}, { emitEvent: false });
+      } catch {
+        this.getStorage().removeItem(this.storageKey);
+      }
+    }
+
+    // sauvegarde auto
+    this.sub = form.valueChanges.subscribe((value) => {
+      const payload: DraftSnapshot = {
+        value,
+        updatedAt: new Date().toISOString(),
+      };
+
+      this.getStorage().setItem(this.storageKey, JSON.stringify(payload));
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  clearDraft(): void {
+    if (this.storageKey) {
+      this.getStorage().removeItem(this.storageKey);
+    }
+  }
+
+  private buildStorageKey(): string {
+    const url = this.normalizeUrl(this.router.url);
+    return `draft:${this.draftFormName}:${url}`;
+  }
+
+  private normalizeUrl(url: string): string {
+    // enlève le fragment si besoin
+    const [pathWithQuery] = url.split('#');
+
+    // tu peux choisir de garder ou enlever certains query params
+    // ici on garde tout pour distinguer des cas comme ?tab=1
+    return pathWithQuery;
+  }
+
+  private getStorage(): Storage {
+    return this.draftStorage === 'session' ? sessionStorage : localStorage;
+  }
+}
