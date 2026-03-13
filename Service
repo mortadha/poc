@@ -1,0 +1,51 @@
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class FolderNavigationService {
+  private readonly STORAGE_KEY = 'last-route-per-folder';
+
+  private lastRoutePerFolder: Record<string, string> = {};
+
+  constructor() {
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+
+    if (saved) {
+      try {
+        this.lastRoutePerFolder = JSON.parse(saved);
+      } catch {
+        this.lastRoutePerFolder = {};
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+    }
+  }
+
+  private save(): void {
+    localStorage.setItem(
+      this.STORAGE_KEY,
+      JSON.stringify(this.lastRoutePerFolder)
+    );
+  }
+
+  setLastRoute(folderId: string, route: string): void {
+    if (!folderId || !route) return;
+
+    this.lastRoutePerFolder[folderId] = route;
+    this.save();
+  }
+
+  getLastRoute(folderId: string): string | null {
+    return this.lastRoutePerFolder[folderId] ?? null;
+  }
+
+  clearLastRoute(folderId: string): void {
+    delete this.lastRoutePerFolder[folderId];
+    this.save();
+  }
+
+  clearAll(): void {
+    this.lastRoutePerFolder = {};
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+}
