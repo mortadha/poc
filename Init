@@ -1,0 +1,106 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  Router,
+  RouterModule
+} from '@angular/router';
+import { filter } from 'rxjs/operators';
+
+import { ErrorTestService } from '../../../core/services/errorTestService';
+import { FolderNavigationService } from '../../../core/services/folder-navigation';
+
+@Component({
+  selector: 'app-folder',
+  standalone: true,
+  imports: [RouterModule],
+  template: `
+    <a
+      [routerLink]="['/dossier', currentclientId, 'add']"
+      routerLinkActive="active"
+      [class.disabled]="!currentclientId"
+    >
+      add
+    </a>
+
+    <a
+      [routerLink]="['/dossier', currentclientId, 'priseAppel']"
+      routerLinkActive="active"
+      [class.disabled]="!currentclientId"
+    >
+      prise Appel
+    </a>
+
+    <a
+      [routerLink]="['/dossier', currentclientId, 'vehicule']"
+      routerLinkActive="active"
+      [class.disabled]="!currentclientId"
+    >
+      vehicule
+    </a>
+
+    <button (click)="test500()">Tester 500</button>
+
+    <router-outlet></router-outlet>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class Folder implements OnInit {
+  currentclientId: string | null = null;
+
+  private testService = inject(ErrorTestService);
+  private route = inject(ActivatedRoute);
+  private nav = inject(FolderNavigationService);
+  private router = inject(Router);
+
+  ngOnInit(): void {
+    // 1) Récupérer l'id dossier depuis la route enfant
+    this.route.firstChild?.paramMap.subscribe(params => {
+      const id = params.get('iddossier');
+      this.currentclientId = id;
+
+      if (!id) return;
+
+      const currentUrl = this.router.url;
+      const lastRoute = this.nav.getLastRoute(id);
+
+      // 2) Si on est exactement sur /dossier/:id, restaurer la dernière sous-route
+      if (currentUrl === `/dossier/${id}` && lastRoute) {
+        this.router.navigate([`/dossier/${id}/${lastRoute}`], {
+          replaceUrl: true
+        });
+      }
+    });
+
+    // 3) À chaque navigation finie, mémoriser la sous-route actuelle
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        if (!this.currentclientId) return;
+
+        const segments = this.router.url.split('/').filter(Boolean);
+
+        // Exemple attendu :
+        // /dossier/123/add
+        // ['dossier', '123', 'add']
+        if (segments.length < 3) return;
+        if (segments[0] !== 'dossier') return;
+        if (segments[1] !== this.currentclientId) return;
+
+        const childRoute = segments.slice(2).join('/');
+
+        if (childRoute) {
+          this.nav.setLastRoute(this.currentclientId, childRoute);
+        }
+      });
+  }
+
+  test500(): void {
+    this.testService.trigger500().subscribe();
+  }
+}
